@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<title>LogicFirst: think before you type</title>
+<style>
+:root{--bg:#0F172A;--s:#1E293B;--a:#C6FF00;--t:#F8FAFC;--d:#FF4D4D;--g:#22C55E;--m:#94A3B8;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t);font:400 1rem/1.55 var(--sans)}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px dashed var(--a);outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font:900 1.6rem/1 var(--sans);letter-spacing:-.04em}.logo b{background:var(--a);color:var(--bg);padding:0 8px;margin-left:2px}
+.xp{font:700 .95rem var(--mono);border:3px solid var(--t);padding:4px 10px;background:var(--s)}
+h1{font:900 clamp(1.8rem,5vw,3rem)/1.05 var(--sans);letter-spacing:-.04em;margin:24px 0 6px}
+.sub{color:var(--m);margin:0 0 20px;max-width:60ch}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+.step{border:3px solid var(--t);background:var(--s);padding:8px 6px;text-align:left;min-height:64px;box-shadow:3px 3px 0 var(--t)}
+.step small{display:block;color:var(--m);font:600 .72rem var(--mono)}
+.step span{font-weight:800;font-size:.9rem}
+.step.active{background:var(--a);color:var(--bg);box-shadow:3px 3px 0 var(--t)}.step.active small{color:var(--bg)}
+.step.done{border-color:var(--g)}.step.done small{color:var(--g)}
+.step.locked{opacity:.55;border-style:dashed;box-shadow:none;cursor:not-allowed}
+.card{background:var(--s);border:3px solid var(--t);box-shadow:6px 6px 0 var(--a);padding:20px}
+.card h2{margin:0 0 6px;font:900 1.4rem var(--sans);letter-spacing:-.02em}
+.hint{color:var(--m);margin:0 0 16px}
+.tpl{font-size:1.15rem;line-height:2.4}
+.slot{font:700 1rem var(--mono);background:var(--bg);color:var(--a);border:3px dashed var(--a);padding:2px 10px;margin:0 2px;min-width:7ch;max-width:100%}
+.slot.filled{border-style:solid}.slot.sel{background:var(--a);color:var(--bg)}
+.slot.ok{background:var(--g);color:#052e16;border-color:var(--g)}
+.slot.bad{border-color:var(--d);color:var(--d);animation:shake .3s}
+.bank{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+.chip,.btn{font-weight:800;border:3px solid var(--t);padding:8px 14px;transition:transform .08s,box-shadow .08s}
+.chip{background:var(--bg);box-shadow:3px 3px 0 var(--a);font-family:var(--mono);font-size:.9rem}
+.btn{background:var(--a);color:var(--bg);box-shadow:4px 4px 0 var(--t)}
+.btn.alt{background:var(--s);color:var(--t)}
+.chip:active,.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--t)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.fb{margin-top:14px;display:grid;gap:8px}
+.fb p{margin:0;border-left:6px solid var(--d);padding:6px 12px;background:var(--bg)}
+.fb p.good{border-color:var(--g)}
+.line{display:flex;gap:12px;align-items:baseline;font:500 1rem/2.3 var(--mono)}
+.line i{color:var(--m);font-style:normal;min-width:2.5ch}
+.forge{display:grid;gap:16px;grid-template-areas:"check code" "check tests";grid-template-columns:minmax(220px,300px) 1fr}
+.pane{min-width:0}.pc{grid-area:check}.pk{grid-area:code}.pt{grid-area:tests}
+.tabs{display:none;gap:8px;margin-bottom:12px}
+.tabs .btn{flex:1;padding:8px 4px;font-size:.9rem}.tabs .btn.on{background:var(--a);color:var(--bg)}.tabs .btn:not(.on){background:var(--s);color:var(--t)}
+textarea{width:100%;min-height:300px;resize:vertical;background:var(--bg);color:var(--t);border:3px solid var(--a);padding:12px;font:500 .92rem/1.6 var(--mono);tab-size:2}
+.ck{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ck li{display:flex;gap:10px;align-items:flex-start}
+.box{flex:none;width:24px;height:24px;border:3px solid var(--t);display:grid;place-items:center;font-weight:900;color:var(--bg)}
+.ck li.ok .box{background:var(--a)}
+.res{list-style:none;margin:0;padding:0;font:500 .9rem var(--mono);display:grid;gap:4px}
+.res .p{color:var(--g)}.res .f{color:var(--d)}
+.note{font-size:.9rem;color:var(--m)}
+.win{position:fixed;inset:0;background:rgba(15,23,42,.92);display:grid;place-items:center;padding:20px;z-index:9}
+.win .card{background:var(--a);color:var(--bg);box-shadow:8px 8px 0 var(--t);max-width:440px;text-align:center}
+.win h2{font-size:2.2rem}.win .btn{background:var(--bg);color:var(--a)}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.picker{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}.picker .btn{padding:6px 10px;font-size:.85rem}.picker .btn.on{background:var(--a);color:var(--bg)}.picker .btn:not(.on){background:var(--s);color:var(--t)}
+.nodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:14px 0}
+.nd{text-align:left;background:var(--bg);border:3px solid var(--t);padding:8px 10px;box-shadow:3px 3px 0 var(--a)}.nd small{display:block;color:var(--a);font:700 .72rem var(--mono)}.nd.sel{background:var(--a);color:var(--bg)}.nd.sel small{color:var(--bg)}
+.edges{list-style:none;padding:0;margin:12px 0;display:grid;gap:6px;font:500 .85rem var(--mono)}.edges li{display:flex;gap:8px;align-items:center;justify-content:space-between;border:2px solid var(--m);padding:4px 8px}.edges button{border:2px solid var(--d);background:none;color:var(--d);font-weight:800}
+.belt{display:flex;gap:10px;flex-wrap:wrap;margin:34px 0 14px}.it{position:relative;border:3px solid var(--t);padding:8px 12px;font:700 .95rem var(--mono);background:var(--bg)}.it.used{opacity:.4}.it.cur{border-color:var(--a);transform:translateY(-6px);box-shadow:4px 4px 0 var(--a)}.it.cur:before{content:"▼";position:absolute;top:-26px;left:50%;transform:translateX(-50%);color:var(--a)}
+.jars{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.jar{border:3px solid var(--a);padding:6px 14px;min-width:90px;text-align:center;background:var(--bg);box-shadow:4px 4px 0 var(--a)}.jar b{display:block;font:900 1.6rem var(--mono);color:var(--a)}.jar small{color:var(--m);font:600 .75rem var(--mono)}
+.chip:disabled{opacity:.5}
+.guide{border:3px solid var(--m);background:var(--s);padding:10px 14px;margin-bottom:16px}.guide summary{font-weight:800;cursor:pointer}.guide ol{margin:6px 0 6px 20px;padding:0}.guide p{margin:6px 0}
+.cop{margin-top:20px;border:3px solid var(--a);background:var(--s);padding:14px;box-shadow:6px 6px 0 var(--t)}.cop-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;font-size:1.1rem}
+.cop-st{font:700 .78rem var(--mono);padding:2px 8px;border:2px solid var(--m);color:var(--m)}.cop-st.live{border-color:var(--g);color:var(--g)}
+.cop input{flex:1;min-width:180px;background:var(--bg);color:var(--t);border:3px solid var(--t);padding:8px 10px;font:inherit}
+@media(max-width:767px){
+ .steps{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.step{padding:6px 4px;min-height:56px}.step span{font-size:.72rem}
+ .forge{display:block}.tabs{display:flex}.pane{display:none}.forge[data-tab=check] .pc,.forge[data-tab=code] .pk,.forge[data-tab=tests] .pt{display:block}
+ .card{padding:14px}.tpl{font-size:1.02rem}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header><div class="logo">Logic<b>First</b></div><div class="xp" id="xp" aria-live="polite"></div></header>
+ <nav class="picker" id="pick" aria-label="Challenges"></nav><h1 id="ttl"></h1>
+ <p class="sub" id="sub"></p>
+ <nav class="steps" id="steps" aria-label="Phases"></nav>
+ <main id="main"></main>
+</div>
+<script>
+const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==='class')e.className=v;else if(x.startsWith('on'))e.addEventListener(x.slice(2),v);else if(x.startsWith('aria-'))e.setAttribute(x,String(v));else if(v===false||v==null){}else e.setAttribute(x,v===true?'':v)}k.flat().forEach(c=>e.append(c));return e};
+const $=s=>document.querySelector(s);
+const un=a=>[...new Set(a)];
+const bag=a=>un(a).sort((x,y)=>x.length-y.length||x.localeCompare(y));
+
+/* ---------- CHALLENGES: node = [id,type,label,keyword?]; edges "from>to[y|n|d]" (no suffix = next) ---------- */
+const CH=[
+{id:'badge',t:'The Badge Counter',tr:'Frontend',d:'Turn a messy notification feed into the number on a tab.',fn:'buildBadges',a:'notifications',
+ bp:['I receive {{0}}. I must count only items that are {{1}}, grouped by {{2}}. Past {{3}}, the badge shows 99+. The function returns {{4}}.',['an array of notifications','unread','category','99','an object of category to badge text'],['one string','read','id','100','a single number']],
+ fl:[[1,'start','Receive notifications'],[2,'init','Create empty counts','counts'],[3,'loop','For each notification'],[4,'cond','Is it read?','read'],[5,'action','Add 1 to its category count','1'],[6,'loop','For each category in counts'],[7,'cond','Count is greater than 99?','greater'],[8,'action','Set badge to 99+'],[9,'action','Set badge to count as text','text'],[10,'return','Return badges','badges']],
+ ed:'1>2 2>3 3>4 4>3y 4>5n 5>3 3>6d 6>7 7>8y 7>9n 8>6 9>6 6>10d',dc:['unread','less','number','badge'],
+ cv:{i:[['chat','chat',0],['chat ✓','chat',1],['likes','likes',0],['chat','chat',0]],s:{chat:0,likes:0},f:(s,t)=>{if(!t[2])s[t[1]]++;return s}},
+ ts:[[4,'skips read items',"eq(buildBadges([...make(2,'chat',1),...make(1,'chat')]),{chat:'1'})"],[5,'counts per category',"eq(buildBadges([...make(2,'chat'),...make(3,'likes')]),{chat:'2',likes:'3'})"],[7,'99 stays 99',"eq(buildBadges(make(99,'chat')),{chat:'99'})"],[7,'100 becomes 99+',"eq(buildBadges(make(100,'chat')),{chat:'99+'})"],[9,'badges are text',"typeof buildBadges(make(1,'a')).a==='string'"]]},
+{id:'cart',t:'The Cart Total',tr:'Frontend',d:'Sum a cart and apply a discount only when it earns one.',fn:'cartTotal',a:'items',
+ bp:['I receive {{0}}, each with a price and a qty. When the total passes {{1}}, I take {{2}} off. The function returns {{3}}.',['an array of item objects','100','10','the final total as a number'],['a single price','50','one item','the discount only']],
+ fl:[[1,'start','Receive cart items'],[2,'init','Set total to 0','0'],[3,'loop','For each item'],[4,'action','Add price times quantity to total','quantity'],[5,'cond','Total is greater than 100?','100'],[6,'action','Subtract 10 from total','10'],[7,'return','Return total','total']],
+ ed:'1>2 2>3 3>4 4>3 3>5d 5>6y 5>7n 6>7',dc:['1','50','price','less'],
+ cv:{i:[['30×2',30,2],['20×1',20,1],['40×2',40,2],['check']],s:{total:0},f:(s,t)=>{if(t[0]=='check'){if(s.total>100)s.total-=10}else s.total+=t[1]*t[2];return s}},
+ ts:[[4,'adds price times qty',"cartTotal([{price:10,qty:3}])===30"],[5,'exactly 100 is not discounted',"cartTotal([{price:50,qty:2}])===100"],[6,'over 100 takes 10 off',"cartTotal([{price:60,qty:2}])===110"],[2,'empty cart is 0',"cartTotal([])===0"]]},
+{id:'password',t:'The Password Check',tr:'Backend',d:'Decide if a password is strong enough to accept.',fn:'isStrong',a:'password',
+ bp:['I receive {{0}}. It is strong with at least {{1}} characters and at least {{2}} digit. The function returns {{3}}.',['a password string','8','1','true or false'],['an array of passwords','6','3','the digit count']],
+ fl:[[1,'start','Receive password'],[2,'init','Set digits to 0','digits'],[3,'loop','For each character'],[4,'cond','Is it a digit?','digit'],[5,'action','Add 1 to digits'],[6,'cond','Length is at least 8?','8'],[7,'cond','Digits is at least 1?','1'],[8,'return','Return true','true'],[9,'return','Return false','false']],
+ ed:'1>2 2>3 3>4 4>5y 4>3n 5>3 3>6d 6>7y 6>9n 7>8y 7>9n',dc:['6','3','null','chars'],
+ cv:{i:[['p'],['a'],['5'],['9'],['x']],s:{digits:0},f:(s,t)=>{if(/\d/.test(t[0]))s.digits++;return s}},
+ ts:[[4,'counts digits',"isStrong('abcdefg1')===true"],[6,'too short fails',"isStrong('a1')===false"],[7,'needs a digit',"isStrong('abcdefgh')===false"],[8,'all digits is fine',"isStrong('12345678')===true"]]},
+{id:'dupe',t:'The Duplicate Finder',tr:'Backend',d:'Find the first value that repeats, remembering what you have seen.',fn:'firstDuplicate',a:'nums',
+ bp:['I receive {{0}}. I remember each value I have {{1}}. The first value that appears again is returned, or {{2}} if none repeats. I remember with a {{3}}.',['a list of numbers','seen','null','set'],['one number','sorted','zero','sorted copy']],
+ fl:[[1,'start','Receive list of numbers'],[2,'init','Create empty seen set','empty'],[3,'loop','For each number'],[4,'cond','Is it already in seen?','seen'],[5,'return','Return that number'],[6,'action','Add it to seen'],[7,'return','Return null','null']],
+ ed:'1>2 2>3 3>4 4>5y 4>6n 6>3 3>7d',dc:['sorted','last','full','zero'],
+ cv:{i:[['4',4],['7',7],['4',4],['9',9]],s:{u:0,found:0,_:[]},f:(s,t)=>{if(s.found)return s;if(s._.includes(t[1]))s.found=t[1];else{s._.push(t[1]);s.u++}return s}},
+ ts:[[4,'finds the first repeat',"firstDuplicate([1,2,3,2,1])===2"],[7,'null when nothing repeats',"firstDuplicate([1,2,3])===null"],[2,'empty list',"firstDuplicate([])===null"],[6,'repeat right at the start',"firstDuplicate([5,5])===5"]]},
+{id:'order',t:'The Order Pipeline',tr:'Full-stack',d:'Client sends orders, the server validates, the stock updates, the screen syncs.',fn:'processOrders',a:'stock, orders',
+ bp:['I receive {{0}} and a list of order quantities. An order is rejected when it is more than {{1}}. Accepted orders reduce stock and the screen is {{2}}. The function returns {{3}}.',['a stock number','the current stock','synced','the remaining stock'],['a price','the order total','deleted','the rejected orders']],
+ fl:[[1,'start','Receive stock and orders'],[2,'loop','For each order'],[3,'cond','Quantity is more than stock?','more'],[4,'action','Reject the order'],[5,'action','Subtract quantity from stock','Subtract'],[6,'action','Sync new stock to the screen'],[7,'return','Return stock','stock']],
+ ed:'1>2 2>3 3>4y 3>5n 4>2 5>6 6>2 2>7d',dc:['less','Add','price','total'],
+ cv:{i:[['order 3',3],['order 9',9],['order 5',5]],s:{stock:10},f:(s,t)=>{if(t[1]<=s.stock)s.stock-=t[1];return s}},
+ ts:[[5,'accepts valid orders',"processOrders(10,[3,4])===3"],[3,'rejects too-large order',"processOrders(10,[11])===10"],[3,'exact stock is allowed',"processOrders(10,[10])===0"],[7,'no orders',"processOrders(10,[])===10"]]}
+];
+
+/* ---------- STATE ---------- */
+const KEY='logicfirst.v2';
+let S={cur:0,P:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const cc=()=>CH[S.cur];
+const pOf=id=>S.P[id]||(S.P[id]={ph:1,done:{},edges:[],hints:0,code:null});
+const p=()=>pOf(cc().id);
+const xp=()=>CH.reduce((n,c)=>{const q=pOf(c.id);return n+Object.keys(q.done).length*100+(q.done[5]&&!q.hints?50:0)},0);
+const PH=['Understand','Map','Write','Watch','Build'];
+const PHL=['Understand the problem','Map the steps','Write it in plain English','Watch it run','Build the code'];
+const TYPE={start:'START',init:'SET UP',loop:'REPEAT',cond:'DECIDE',action:'DO',return:'FINISH'};
+const unlocked=n=>n===1||p().done[n-1];
+function go(n){if(!unlocked(n))return;p().ph=n;save();render()}
+
+function renderChrome(){
+ const c=cc(),P=p();
+ $('#ttl').textContent=c.t;$('#sub').textContent=c.d+' You will plan it in 5 small steps and write the code last. ('+c.tr+', JavaScript)';
+ $('#pick').replaceChildren(...CH.map((x,i)=>h('button',{class:'btn'+(i===S.cur?' on':''),'aria-current':i===S.cur,onclick:()=>{S.cur=i;save();render()}},(pOf(x.id).done[5]?'✓ ':'')+x.t)));
+ $('#steps').replaceChildren(...PH.map((l,i)=>{const n=i+1,lock=!unlocked(n);
+  return h('button',{class:'step'+(P.ph===n?' active':'')+(P.done[n]?' done':'')+(lock?' locked':''),'aria-disabled':lock,'aria-current':P.ph===n?'step':'false',onclick:()=>go(n)},h('small',{},'Step '+n),h('span',{},l))}));
+ $('#xp').textContent=xp()+' XP';
+}
+
+/* ---------- FILL-IN (Phases 1 and 3) ---------- */
+function fillView({title,hint,tpl,lines,ans,why,bank,key}){
+ const vals={};let sel=null;const slots={};let lastCheck='';
+ const body=h('div');
+ const make=t=>{const f=document.createDocumentFragment();t.split(/(\{\{\w+\}\})/).forEach(x=>{const m=x.match(/^\{\{(\w+)\}\}$/);
+  if(!m)return f.append(x);const id=m[1];
+  const b=h('button',{class:'slot',onclick:()=>{vals[id]=null;sel=id;paint()}});slots[id]=b;f.append(b)});return f};
+ if(tpl)body.append(h('p',{class:'tpl'},make(tpl)));
+ else lines.forEach(([n,t])=>body.append(h('div',{class:'line'},h('i',{},n),h('span',{},make(t)))));
+ const chips=h('div',{class:'bank',role:'group','aria-label':'Word bank'});
+ const fb=h('div',{class:'fb',role:'status'});const act=h('div',{class:'row'});
+ act.append(h('button',{class:'btn',onclick:verify},'Check answers'));
+ bank.forEach(c=>chips.append(h('button',{class:'chip',onclick:()=>{
+  const id=sel&&!vals[sel]?sel:Object.keys(slots).find(k=>!vals[k]);
+  if(!id)return;vals[id]=c;sel=Object.keys(slots).find(k=>!vals[k])||null;fb.replaceChildren();paint()}},c)));
+ function paint(){Object.entries(slots).forEach(([id,b])=>{b.textContent=vals[id]||'____';b.className='slot'+(vals[id]?' filled':'')+(sel===id?' sel':'')})}
+ function verify(){
+  const wrong=Object.keys(ans).filter(k=>vals[k]!==ans[k]);fb.replaceChildren();
+  if(wrong.length===Object.keys(ans).length&&wrong.every(k=>!vals[k]))return fb.append(h('p',{},'Pick a chip to fill each blank, then check.'));
+  Object.keys(ans).forEach(k=>slots[k].classList.add(wrong.includes(k)?'bad':'ok'));
+  if(!wrong.length){p().done[key]=1;save();renderChrome();
+   fb.append(h('p',{class:'good'},'Every blank is right. The next step is unlocked.'));
+   act.replaceChildren(h('button',{class:'btn',onclick:()=>go(key+1)},'Next: '+PHL[key]));
+  }else{wrong.forEach(k=>fb.append(h('p',{},(vals[k]?'Not quite. ':'Still empty. ')+why)));
+   lastCheck='Last check: '+wrong.length+' blank(s) were wrong. Wrong picks: '+(wrong.filter(k=>vals[k]).map(k=>vals[k]).join(', ')||'none')+'.';wrong.forEach(k=>{vals[k]=null});setTimeout(()=>{if(!p().done[key])paint()},900)}
+ }
+ sel=Object.keys(slots)[0];paint();
+ const sec=h('section',{class:'card'},h('h2',{},title),h('p',{class:'hint'},hint),body,chips,act,fb);sec.ctx=()=>({context:'The student is filling in blanks. Text so far: '+(tpl||lines.map(l=>l[1]).join(' / ')).replace(/\{\{(\w+)\}\}/g,(m,i)=>vals[i]?'['+vals[i]+']':'[blank]')+'. '+lastCheck});return sec;
+}
+const bpView=c=>fillView({title:'Step 1: Understand the problem',hint:'Fill in the blanks to say what goes in, what the rules are, and what comes out. Tap a blank, then tap a word below.',tpl:c.bp[0],ans:Object.fromEntries(c.bp[1].map((v,i)=>[i,v])),why:'Think about what this blank asks for: something that comes in, a rule, or what comes out.',bank:bag([...c.bp[1],...c.bp[2]]),key:1});
+const scriptView=c=>{const ks=c.fl.filter(n=>n[3]);
+ return fillView({title:'Step 3: Write it in plain English',hint:'This is your map from Step 2, written as sentences. Fill in the missing word in each step.',lines:c.fl.map((n,i)=>[i+1,n[3]?n[2].replace(n[3],`{{${n[0]}}}`):n[2]]),ans:Object.fromEntries(ks.map(n=>[n[0],n[3]])),why:'Think about the matching step in your map. Which word fits here?',bank:bag([...ks.map(n=>n[3]),...c.dc]),key:3})};
+
+/* ---------- PHASE 2: THE FLOW ---------- */
+const LAB={'':'then',y:'yes',n:'no',d:'loop finished'};
+function flowView(c){
+ const P=p();let from=null,lab='',last='';
+ const nm=id=>c.fl.find(n=>n[0]==id)[2];
+ const need=c.ed.split(' ');
+ const wrap=h('section',{class:'card'}),nodes=h('div',{class:'nodes'}),list=h('ul',{class:'edges'}),fb=h('div',{class:'fb',role:'status'}),labs=h('div',{class:'row'}),act=h('div',{class:'row'});
+ [...c.fl].sort((a,b)=>((a[0]*5)%11)-((b[0]*5)%11)).forEach(n=>nodes.append(h('button',{class:'nd','data-id':n[0],onclick:()=>{
+  if(from===null){from=n[0]}else{const k=from+'>'+n[0]+lab;if(!P.edges.includes(k))P.edges.push(k);from=null;fb.replaceChildren();save()}paint()}},h('small',{},TYPE[n[1]]),n[2])));
+ Object.entries(LAB).forEach(([k,l])=>labs.append(h('button',{class:'chip','aria-pressed':lab===k,'data-l':k,onclick:()=>{lab=k;paint()}},l)));
+ act.append(h('button',{class:'btn',onclick:verify},'Check flow'),h('button',{class:'btn alt',onclick:()=>{P.edges=[];from=null;fb.replaceChildren();save();paint()}},'Clear'));
+ function paint(){
+  [...nodes.children].forEach(b=>b.classList.toggle('sel',b.dataset.id==from));
+  [...labs.children].forEach(b=>b.style.background=b.dataset.l===lab?'var(--a)':'',[...labs.children].forEach(b=>b.style.color=b.dataset.l===lab?'var(--bg)':''));
+  list.replaceChildren(...(P.edges.length?P.edges:[]).map(k=>{const m=k.match(/(\d+)>(\d+)(\w?)/);
+   return h('li',{},h('span',{},nm(m[1])+' → '+nm(m[2])+'  ['+LAB[m[3]]+']'),h('button',{'aria-label':'Remove connection',onclick:()=>{P.edges=P.edges.filter(e=>e!==k);save();paint()}},'✕'))}));
+  if(!P.edges.length)list.append(h('li',{class:'note'},'No connections yet. Tap a step, pick a label, then tap the step it leads to.'));
+ }
+ function verify(){
+  fb.replaceChildren();
+  const extra=P.edges.filter(e=>!need.includes(e)),miss=need.filter(e=>!P.edges.includes(e));last='Last check: '+extra.length+' arrow(s) looked wrong and '+miss.length+' were missing.';
+  extra.forEach(k=>{const m=k.match(/(\d+)>(\d+)(\w?)/);fb.append(h('p',{},'Check this one: "'+nm(m[1])+'" → "'+nm(m[2])+'" ['+LAB[m[3]]+']. Does the logic really go that way, with that label?'))});
+  if(miss.length)fb.append(h('p',{},miss.length+' connection'+(miss.length>1?'s are':' is')+' still missing. Does every decision have a yes and a no? Does every loop have a way out?'));
+  if(!extra.length&&!miss.length){P.done[2]=1;save();renderChrome();fb.append(h('p',{class:'good'},'Your map is correct. The next step is unlocked.'));act.replaceChildren(h('button',{class:'btn',onclick:()=>go(3)},'Next: '+PHL[2]))}
+ }
+ const ex=need[0].match(/(\d+)>(\d+)/);
+ wrap.append(h('h2',{},'Step 2: Map the steps'),h('p',{class:'hint'},'Draw arrows between the steps below. Tap the step an arrow starts from, pick a label, then tap the step it points to.'),h('p',{class:'note'},`Example: "${nm(ex[1])}" → "${nm(ex[2])}" with the label "then".`),nodes,h('p',{class:'note'},'Arrow label. "then" = the normal next step. "yes" / "no" = the two ways out of a DECIDE step. "loop finished" = leaving a REPEAT step when it is done.'),labs,list,act,fb);
+ wrap.ctx=()=>({context:'The student is connecting steps with arrows. Steps: '+c.fl.map(n=>n[2]+' ('+TYPE[n[1]]+')').join('; ')+'. Their arrows so far: '+(P.edges.map(k=>{const m=k.match(/(\d+)>(\d+)(\w?)/);return nm(m[1])+' -> '+nm(m[2])+' ['+LAB[m[3]]+']'}).join('; ')||'none')+'. '+last});paint();return wrap;
+}
+
+/* ---------- PHASE 4: THE CANVAS ---------- */
+function canvasView(c){
+ const cv=c.cv,P=p(),st=cv.st||[structuredClone(cv.s)];
+ if(!cv.st)cv.i.forEach(t=>st.push(cv.f(structuredClone(st[st.length-1]),t)));
+ const key=Object.keys(cv.s).find(x=>x[0]!=='_'),n=cv.i.length;
+ let k=0,score=0,ans=null;
+ const root=h('section',{class:'card'});
+ function paint(){
+  root.replaceChildren(h('h2',{},'Step 4: Watch it run'),h('p',{class:'hint'},'Your steps are about to run on a small example. The boxes below hold the values your logic keeps track of. Before each step, guess what changes.'));
+  root.append(h('div',{class:'belt'},...cv.i.map((t,i)=>h('div',{class:'it'+(i<k||(i===k&&ans!==null)?' used':'')+(i===k?' cur':'')},t[0]))));
+  const sh=st[ans!==null?k+1:k];
+  root.append(h('div',{class:'jars'},...Object.entries(sh).filter(([a])=>a[0]!=='_').map(([a,v])=>h('div',{class:'jar'},h('b',{},String(v)),h('small',{},a)))));
+  if(k>=n){P.done[4]=1;save();renderChrome();
+   return root.append(h('p',{class:'fb'},h('p',{class:'good'},'Simulation done. You predicted '+score+' of '+n+' steps.')),h('div',{class:'row'},h('button',{class:'btn',onclick:()=>go(5)},'Next: '+PHL[4]),h('button',{class:'btn alt',onclick:()=>{k=0;score=0;ans=null;paint()}},'Run again')))}
+  const v=st[k+1][key],opts=[v-1,v,v+1].filter(x=>x>=0);while(opts.length<3)opts.push(opts[opts.length-1]+1);
+  const fb=h('div',{class:'fb',role:'status'});
+  root.append(h('p',{},'The highlighted item is "'+cv.i[k][0]+'". Once it is processed, what will the "'+key+'" box show?'));
+  root.append(h('div',{class:'row'},...opts.map(o=>h('button',{class:'chip',disabled:ans!==null,onclick:()=>{ans=o;if(o===v)score++;paint()}},String(o)))));
+  if(ans!==null){fb.append(h('p',{class:ans===v?'good':''},ans===v?'Right.':'Not quite. It shows '+v+'. Follow this item through your map: which arrow does it take?'));root.append(fb,h('div',{class:'row'},h('button',{class:'btn',onclick:()=>{k++;ans=null;paint()}},k+1<n?'Next step':'Finish')))}
+ }
+ root.ctx=()=>({context:'The student is watching a simulation. Current item: '+(cv.i[k]?cv.i[k][0]:'none')+'. They are predicting what the "'+key+'" box will show afterward. Their pick: '+(ans===null?'not chosen yet':ans)+'.'});paint();return root;
+}
+
+/* ---------- PHASE 5: THE FORGE ---------- */
+const PRE="const make=(n,c,r=0)=>Array.from({length:n},(_,i)=>({id:i,category:c,isRead:!!r}));const R=(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort()):v;const eq=(a,b)=>JSON.stringify(a,R)===JSON.stringify(b,R);";
+function evalAll(code,tests){
+ try{new Function(code)}catch(e){return{syntax:String(e)}}
+ return{out:tests.map(t=>{try{return new Function(code+"\n"+PRE+"return ("+t+")")()===true}catch(e){return false}})};
+}
+const WSRC='const PRE='+JSON.stringify(PRE)+';'+evalAll.toString()+';postMessage({ready:1});onmessage=e=>postMessage(evalAll(e.data.code,e.data.tests));';
+const RISKY=/while\s*\(\s*(true|1)\s*\)|for\s*\(\s*;\s*;\s*\)/;
+function runTests(code,tests){return new Promise(res=>{
+ let w,fin0=false,got=false,tm;
+ const fallback=()=>RISKY.test(code)?{timeout:true}:evalAll(code,tests);
+ const fin=r=>{if(fin0)return;fin0=true;clearTimeout(tm);try{w&&w.terminate()}catch(e){}res(r)};
+ tm=setTimeout(()=>fin(got?{timeout:true}:fallback()),2500);
+ try{
+  w=new Worker(URL.createObjectURL(new Blob([WSRC],{type:'text/javascript'})));
+  w.onmessage=e=>{if(e.data&&e.data.ready){got=true;return}fin(e.data)};
+  w.onerror=()=>fin(fallback());
+  w.postMessage({code,tests});
+ }catch(e){fin(fallback())}
+})}
+
+function forgeView(c){
+ const P=p(),tests=c.ts.map(t=>t[2]),ids=un(c.ts.map(t=>t[0]));
+ const lbl=id=>c.fl.find(n=>n[0]==id)[2];
+ const start='function '+c.fn+'('+c.a+') {\n  // Follow your Phase 3 script, line by line.\n\n}\n';
+ let results=null;const lvl={};
+ const root=h('div'),tabs=h('div',{class:'tabs',role:'tablist'}),forge=h('div',{class:'forge','data-tab':'code'});
+ const ta=h('textarea',{spellcheck:'false','aria-label':'Code editor',autocapitalize:'off'});ta.value=P.code||start;
+ ta.addEventListener('input',()=>{P.code=ta.value;save()});
+ ta.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}});
+ const ck=h('ul',{class:'ck'}),res=h('div'),hintBox=h('div',{class:'fb',role:'status'});
+ [['check','Checklist'],['code','Code'],['tests','Tests']].forEach(([k,l])=>tabs.append(h('button',{class:'btn'+(k==='code'?' on':''),role:'tab',onclick:e=>{forge.dataset.tab=k;[...tabs.children].forEach(b=>b.classList.toggle('on',b===e.currentTarget))}},l)));
+ const run=h('button',{class:'btn',onclick:async()=>{
+  run.disabled=true;run.textContent='Running…';
+  try{results=await runTests(ta.value,tests)}catch(e){results={syntax:String(e)}}
+  finally{run.disabled=false;run.textContent='Run tests'}
+  if(forge.dataset.tab==='check'&&innerWidth<768)forge.dataset.tab='tests';
+  paint();
+ }},'Run tests');
+ const failing=()=>results&&results.out&&ids.find(id=>c.ts.some((t,x)=>t[0]==id&&!results.out[x]));
+ 
+ const reset=h('button',{class:'btn alt',onclick:()=>{ta.value=start;P.code=start;save()}},'Reset code');
+ function paint(){
+  ck.replaceChildren();res.replaceChildren();
+  const ok=id=>results&&results.out&&c.ts.every((t,x)=>t[0]!=id||results.out[x]);
+  ids.forEach(id=>ck.append(h('li',{class:ok(id)?'ok':''},h('span',{class:'box','aria-hidden':'true'},ok(id)?'✓':''),h('span',{},lbl(id)))));
+  if(!results)return res.append(h('p',{class:'note'},'Press "Run tests" to see how your code does.'));
+  if(results.timeout)return res.append(h('p',{class:'note'},'That took too long. Does every loop in your flow have a way to finish?'));
+  if(results.syntax)return res.append(h('p',{class:'note'},'Your logic has not been judged yet. The language could not read the code ('+results.syntax+'). Look near that spot and ask what it expects next.'));
+  res.append(h('ul',{class:'res'},...c.ts.map((t,x)=>h('li',{class:results.out[x]?'p':'f'},(results.out[x]?'✓ ':'✗ ')+t[1]))));
+  if(results.out.every(Boolean)){P.done[5]=1;save();renderChrome();win()}
+ }
+ forge.append(
+  h('div',{class:'pane pc card'},h('h2',{},'Your plan'),h('p',{class:'hint'},'Each item ticks when its checks pass.'),ck),
+  h('div',{class:'pane pk'},ta,h('div',{class:'row'},run,reset)),
+  h('div',{class:'pane pt card'},h('h2',{},'Checks'),res));
+ root.ctx=()=>{const id=failing(),syn=results&&results.syntax;
+  if(!results)return{need:'Press "Run tests" first so I can see what is failing. Then ask me.'};
+  if(results.timeout)return{context:'The code ran too long, likely a loop that never ends.',code:ta.value.slice(0,2000),fb:['Does every loop in your map have an arrow for when it is finished?','Look at each REPEAT step in your map. What makes it stop?','Walk a tiny input through your loop by hand. Does anything ever change so the loop can end?']};
+  if(!id&&!syn)return{need:'All your checks pass. Nothing to fix!'};
+  return{node:id?lbl(id):'',test:id?c.ts.find((t,x)=>t[0]==id&&!results.out[x])[1]:'',syntax:syn||'',code:ta.value.slice(0,2000),
+   fb:syn?['Good news: your plan is fine. The language just could not read one line. Check the spot named in the message.','Look closely at that line. What punctuation or word might the language expect next?','Compare that line with a working line elsewhere in your code. What is different?']
+   :[`Look at your map step "${lbl(id)}". What should it do with this input?`,`Trace this check by hand through "${lbl(id)}". Where does your code differ from your map?`,`Walk the failing input through "${lbl(id)}" one value at a time and write down what each step holds.`]}};
+ root.append(tabs,forge);paint();return root;
+}
+function win(){
+ if($('.win'))return;const last=S.cur>=CH.length-1;
+ const d=h('div',{class:'win',role:'dialog','aria-modal':'true'},h('div',{class:'card'},
+  h('h2',{},'Challenge complete'),h('p',{},'You planned it, mapped it, wrote it out, watched it run, then built it. '+xp()+' XP total.'),
+  h('div',{class:'row',style:'justify-content:center'},
+   h('button',{class:'btn',onclick:()=>{d.remove();if(!last){S.cur++;save()}render()}},last?'Close':'Next challenge'),
+   h('button',{class:'btn',onclick:()=>d.remove()},'Stay here'))));
+ document.body.append(d);d.querySelector('button').focus();
+}
+/* ---------- GUIDE + COPILOT ---------- */
+const GUIDE=[
+ ['Before solving anything, say what goes in, what comes out, and what the rules are.',['Tap a blank in the paragraph.','Tap the word below that fits it.','Press "Check answers". Wrong ones tell you where to look.'],'Most bugs come from solving the wrong problem.'],
+ ['Draw the route your logic takes, like a map with arrows.',['Tap the step an arrow starts from.','Pick a label: "then", "yes", "no" or "loop finished".','Tap the step the arrow points to. Repeat, then press "Check flow".'],'If the map is right, the code is mostly typing.'],
+ ['Turn your map into plain-English steps. Fill in the missing word in each.',['Tap a blank in the steps.','Tap the word that fits. Use your map from Step 2 as a guide.','Press "Check answers".'],'Writing steps in words first keeps you from getting stuck on code rules.'],
+ ['Watch your steps run on a tiny example and guess what happens next.',['Look at the highlighted item.','Pick what the first box will show afterwards.','Press "Next step". Right or wrong, you will see why.'],'Guessing and checking exposes mistakes in your thinking before code does.'],
+ ['Now write the real JavaScript for your plan.',['Write your code in the editor. Your plan is on the checklist.','Press "Run tests".','Stuck? Ask the Copilot below. It gives hints, never the answer.'],'Because you planned first, this is just translating your plan into code.']];
+const guide=n=>{const g=GUIDE[n-1];return h('details',{class:'guide',open:true},h('summary',{},'How this step works'),h('p',{},g[0]),h('ol',{},...g[1].map(x=>h('li',{},x))),h('p',{class:'note'},'Why: '+g[2]))};
+const FB=[
+ ['Read the title and the example again. For this blank, is it asking for something that comes in, a rule, or what comes out?','Start with the blank you are most sure of. The words around it often show what kind of thing goes there.','Explain the problem out loud in your own words, then match each part of what you said to a blank.'],
+ ['Start at the first step. Where does it lead next? Say it as a sentence, then draw that arrow.','Look at every DECIDE step. It needs two arrows out, one for yes and one for no. Do you have both?','Look at every REPEAT step. It needs an arrow into its body, an arrow back, and one for when it is finished.'],
+ ['Find the matching step in your Step 2 map. What word describes what it does?','Read the sentence out loud with each candidate word. Which one makes sense?','Think about what the step needs to know or change. Which word names that?'],
+ ['Which arrow in your map does this item follow? Does that arrow change the box?','Walk the item through your map one step at a time. What does each box hold?','Compare the box before and after. Did your map say anything should change for this item?'],
+ ['Run your tests, then ask me about the one that fails.','Each check is linked to a step in your map. Which step is it?','Trace a tiny input through that step by hand.']];
+const COP={s:'checking'};
+const setStatus=el=>(el?[el]:[...document.querySelectorAll('.cop-st')]).forEach(e=>{e.textContent=COP.s==='live'?'● Live: connected to Claude':COP.s==='off'?'○ Not connected: showing built-in hints':'… checking';e.className='cop-st '+COP.s});
+fetch('/api/copilot').then(r=>r.json()).then(j=>{COP.s=j.configured?'live':'off';setStatus()}).catch(()=>{COP.s='off';setStatus()});
+async function ask(payload,fb){
+ try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),9000);
+  const r=await fetch('/api/copilot',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify(payload)});
+  clearTimeout(tm);if(r.ok){const j=await r.json();if(j.text){COP.s='live';setStatus();return{text:j.text,ai:true}}}}catch(e){}
+ COP.s='off';setStatus();return{text:fb,ai:false};
+}
+function copilot(n,c,view){
+ let lv=0;const st=h('span',{class:'cop-st'}),out=h('div',{class:'fb',role:'status'});
+ const inp=h('input',{type:'text',maxlength:'300',placeholder:'Type a question, e.g. "what is a loop?"','aria-label':'Ask the Copilot'});
+ async function go(q){
+  const x=view.ctx?view.ctx():{};
+  if(x.need)return out.replaceChildren(h('p',{},x.need));
+  if(!q)lv=Math.min(lv+1,3);p().hints++;save();
+  const F=x.fb||FB[n-1],lev=Math.max(lv,1);
+  let fb=F[Math.min(lev,F.length)-1];if(q)fb='I can only answer typed questions when I am connected to Claude. Here is a nudge instead: '+fb;
+  out.replaceChildren(h('p',{class:'note'},'Thinking…'));
+  const r=await ask({phase:n,title:c.t,level:lev,question:q||'',context:x.context||'',node:x.node||'',test:x.test||'',syntax:x.syntax||'',flow:c.fl.map(z=>z[2]),code:x.code||''},fb);
+  out.replaceChildren(h('p',{},h('b',{},r.ai?'Claude: ':'Built-in hint: '),r.text));
+ }
+ const send=()=>{const q=inp.value.trim();if(q){inp.value='';go(q)}};
+ inp.addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+ const box=h('section',{class:'cop'},h('div',{class:'cop-h'},h('b',{},'✦ Claude Copilot'),st),h('p',{class:'note'},'Stuck? I will ask questions that point you the right way. I will never give you the answer or the code.'),h('div',{class:'row'},h('button',{class:'btn',onclick:()=>go()},"I'm stuck: give me a nudge")),h('div',{class:'row'},inp,h('button',{class:'btn alt',onclick:send},'Ask')),out);
+ setStatus(st);return box;
+}
+/*ROUTER*/
+function render(){
+ renderChrome();const m=$('#main'),c=cc(),n=p().ph;m.replaceChildren();
+ const v=n===1?bpView(c):n===2?flowView(c):n===3?scriptView(c):n===4?canvasView(c):forgeView(c);m.append(guide(n),v,copilot(n,c,v));
+}
+render();
+fetch('challenges.json').then(r=>r.ok?r.json():[]).then(a=>{if(!Array.isArray(a)||!a.length)return;a.forEach(x=>{if(!CH.some(y=>y.id===x.id))CH.push(x)});render()}).catch(()=>{});
+</script>
+</body>
+</html>
